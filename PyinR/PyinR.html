@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>R调用Python</title>
+    <meta charset="utf-8">
+    <meta name="author" content="徐静 @ 联信全栈数据工程师培训" />
+    <link rel="stylesheet" href="zh-CN.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# R调用Python
+### 徐静 @ 联信全栈数据工程师培训
+### 2017/7/11
+
+---
+
+
+
+
+class: inverse,middle
+background-image: url(pic/star.jpg)
+
+
+1. **R**中运行**Python**所需要的包
+--
+
+2. **rPython-win**介绍
+--
+
+3. **Knit**中运行**Python**
+--
+
+4. 实例：**Knit**中**R**爬取数据，调用**python**进行分析
+
+
+---
+class: inverse,center, middle
+background-image: url(pic/star.jpg)
+
+# 1.**R**中运行**Python**所需要的包
+
+---
+class: inverse,  middle
+
+background-image: url(pic/star.jpg)
+
+.pull-left[
+
+Linux、Mac
+
++ install.packages("rPython")
+
++ This package allows the user to call Python from R. It is a natural extension of the rJython package by the same author.
+
++ This should on Linux and other UNIX-like platforms, such as Mac, but would fail on Windows. Windows users may want to check rPython-win.
+
+
+]
+
+.pull-right[
+
+Windows
+
++ rPython-win
+
++ 在GitHub上
+
++ 需要先安装devtools,Rtools
+
++ 修改配置文件
+
+]
+
+---
+
+class: inverse, middle, center
+background-image: url(pic/star.jpg)
+
+# 2.**rPython-win**介绍
+
+
+---
+
+class:inverse,middle
+
+background-image:url(pic/star.jpg)
+
+### 1. 安装rPython-win
+
++ rPython-win:This is rPython for Windows. If you are on Linux/Mac, you can install it from CRAN.
+
++ Download the package as a zip file (see "Download Zip" button to the right of this page).
+Unzip the package and rename the directory as rPython (not rPython-win).
+
++ If needed, edit the configure.win file inside the directory. By default, it contains the lines
+
+    - &lt;span style="color:red;"&gt; echo 'PKG_LIBS=-LC:/python27/libs -lpython27' &gt; src/makevars.win &lt;/span&gt;
+    
+    - &lt;span style="color:red;"&gt; echo 'PKG_CFLAGS=-I"C:/Python27/include"' &gt;&gt; src/makevars.win &lt;/span&gt;
+    
++ and you should edit them to point to the path where you installed Python. In the default configuration it is assumed that the Python version is 2.7 and that it is installed in C:/Python27. Change it according to your Python installation.
++ Install the package running install("path/to/rPython"). For instance, I run
+install("C:/Users/carlos/Downloads/rPython")
+
+
+---
+
+class: inverse, middle
+background-image: url(pic/star.jpg)
+
+```R
+library(devtools)
+install("C:/Users/Administrator.USER-20170417DX/Desktop/rPython")
+```
+
+---
+class: inverse, middle
+background-image: url(pic/star.jpg)
+
+### 介绍rPython中重要的函数
+
+#### 1st 在R中分配和获得Python变量
+
++ python.assign(var.name,value,...)
+
++ python.get(var.name)
+
++ 在R中分配和获得Python变量
+
++ var.name:一个字符串，包含一个有效的Python变量名
+
++ value:R对象，分配給Python对象
+
++ 这些函数可以給Python变量分配值，同时把他们的值返回给R
+
++ python.get() 返回一个R版本的Python变量py.var.
+
+---
+
+class: inverse, middle
+background-image: url(pic/star.jpg)
+
+#### 栗子
+
+
+
+```r
+a &lt;- 1:4
+python.assign( "a", a )
+python.exec( "b = len( a )" )
+python.get( "b" )
+```
+
+```
+## [1] 4
+```
+
+```r
+python.exec( "import math" )
+python.get( "math.pi" )
+```
+
+```
+## [1] 3.141593
+```
+
+---
+
+class: inverse, middle
+background-image: url(pic/star.jpg)
+
+#### 2nd 在R中调用Python函数和方法
+
++ python.call(py.foo,...,simplify=TRUE,as.is=FALSE)
+
++ python.method.call(py.object,py.method,...)
+
++ py.foo:Python函数名称
+
++ py.object: python对象名
+
++ py.method: 对象的方法名称
+
++ simplify: 是否简化输出
+
++ as.is : "hello"in R and "hello"in Python 是一样的吗？
+
++ 运行python函数，作为R对象的参数，返回R对象
+
+
+
+---
+class: inverse, middle
+background-image: url(pic/star.jpg)
+
+#### 栗子
+
+
+
+```r
+python.call( "len", 1:3 )
+```
+
+```
+## [1] 3
+```
+
+```r
+a &lt;- 1:4
+b &lt;- 5:8
+python.exec( "def concat(a,b): return a+b" )
+python.call( "concat", a, b)
+```
+
+```
+## [1] 1 2 3 4 5 6 7 8
+```
+
+```r
+python.assign( "a", "hola hola" )
+python.method.call( "a", "split", " " )
+```
+
+```
+## [1] "hola" "hola"
+```
+---
+
+class: inverse, middle
+background-image: url(pic/star.jpg)
+
+#### 3rd 执行包含在R字符向量中的Python代码
+
++ python.exec(python.code,get.expection=TRUE)
+
++ python.code：一个包含python代码的字符串
+
++ get.expection：逻辑值，用于指示是否检查Python中的异常
+
+
+---
+class: inverse, middle
+background-image: url(pic/star.jpg)
+
+#### 栗子
+
+
+```r
+a &lt;- 1:4
+b &lt;- 5:8
+python.exec( c( "def concat(a,b):", "\treturn a+b" ) )
+python.call( "concat", a, b)
+```
+
+```
+## [1] 1 2 3 4 5 6 7 8
+```
+
+
+
+---
+class: inverse, middle
+background-image: url(pic/star.jpg)
+
+#### 4th 执行Python代码
+
++ python.load(file,get.exception=TRUE)
+
++ file: 一个包含python代码的文件
+
++ get.exception：逻辑值，用于指示是否检查Python中的异常
+
+---
+class: inverse, middle
+background-image: url(pic/star.jpg)
+
+#### 栗子
+
+
+```r
+a &lt;- 1:4
+b &lt;- 5:8
+# this file contains the definition of function concat
+python.load( system.file( "concat.py", package = "rPython" ) )
+python.call( "concat", a, b)
+```
+
+```
+## [1] 1 2 3 4 5 6 7 8
+```
+
+
+
+---
+
+class: inverse, middle, center
+background-image: url(pic/star.jpg)
+
+# 3.**Knit**中运行**Python**
+
+---
+
+class: inverse, middle, center
+background-image: url(pic/star.jpg)
+
+
+偷个懒：详见Section 4 的小栗子。
+
+---
+class: inverse, middle, center
+background-image: url(pic/star.jpg)
+
+# 4.实例：**Knit**中**R**爬取青岛历史天气和空气质量数据，调用**python**进行分析
+
+---
+class:inverse,middle
+
+background-image:url(pic/star.jpg)
+
+```R
+#by Xujing encoding:UTF-8 #2017-06-07
+rm(list=ls(all=T))
+library(RCurl)
+library(XML)
+library(readr)
+## 1. 爬取青岛2012年3月至2017年5月每天的：最高气温,最低气温,天气,风向风力.
+#---------------------------step1:取根url------------------------
+url&lt;-'http://lishi.tianqi.com/qingdao/index.html'
+#伪装浏览器访问
+myheader&lt;-c(
+  "User-Agent"="Mozilla/5.0 (Windows; U; Windows NT 5.1; zh-CN; rv:1.9.1.6) ",
+  "Accept"="text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+  "Accept-Language"="en-us",
+  "Connection"="keep-alive",
+  "Accept-Charset"="GB2312,utf-8;q=0.7,*;q=0.7"
+)
+
+temp0&lt;-getURL(url,httpHeader=myheader,.encoding="GBK")
+k0&lt;-strsplit(temp0,"\r\n")[[1]]
+
+file0&lt;-k0[grep("&lt;li&gt;&lt;a href=\"http://lishi.tianqi.com/qingdao/20",k0)]
+file1&lt;-strsplit(file0,"href=\"")
+file2&lt;-as.numeric(77)
+for(i in 1:77)
+{
+ file2[i]&lt;-file1[[i]][2]
+}
+```
+---
+class:inverse,middle
+
+background-image:url(pic/star.jpg)
+
+```R
+
+file3&lt;-strsplit(file2,"\"&gt;20")
+file4&lt;-as.numeric(77)
+
+for(i in 1:77)
+{
+  file4[i]&lt;-file3[[i]][1]
+}
+
+file4&lt;-file4[1:62]
+```
+
+---
+class:inverse,middle
+
+background-image:url(pic/star.jpg)
+
+
+```R
+
+#-------------step2: 批量爬取根url的数据-----------------------------------
+
+for(j in 1:62)
+{
+  url1&lt;-file4[j]
+  temp1&lt;-getURL(url1,httpHeader=myheader,.encoding="GBK")
+  cat(url1, "\n")
+  
+  k&lt;-strsplit(temp1,"\r\n")[[1]]
+  
+  #时间
+  time0&lt;-k[grep("&lt;li&gt;&lt;a href=\"http://qingdao.tianqi.com/20",k)]
+  
+  time1&lt;-gregexpr("&gt;\\d+",time0)
+  
+  time2&lt;-as.numeric(length(time0))
+  for(i in 1:length(time0))
+  {
+    tempp&lt;-time1[[i]]
+    time2[i]&lt;-substring(time0[i],tempp+1,tempp+attr(tempp,'match.length')+5)
+  }
+  
+  hightTem0&lt;-k[grep("&lt;li&gt;&lt;a href=\"http://qingdao.tianqi.com/20",k)+1]
+  
+  hightTem1&lt;-gregexpr("\\t&lt;li&gt;[-+]?[0-9]",hightTem0)
+  
+  hightTem2&lt;-as.numeric(length(hightTem0))
+  hightTem3&lt;-as.numeric(length(hightTem0))
+  
+```
+---
+class:inverse,middle
+
+background-image:url(pic/star.jpg)
+
+
+```R  
+  for(i in 1:length(hightTem0))
+  {
+    tempp1&lt;-hightTem1[[i]]
+    hightTem2[i]&lt;-substring(hightTem0[i],tempp1+5,tempp1+attr(tempp1,'match.length'))
+    hightTem3[i]&lt;-strsplit(hightTem2[i],"&lt;")[[1]][1]
+    
+  }
+  
+  ```
+  
+---
+class:inverse,middle
+
+background-image:url(pic/star.jpg)
+
+```R
+  
+  #最低气温
+  lowTem0&lt;-k[grep("&lt;li&gt;&lt;a href=\"http://qingdao.tianqi.com/20",k)+2]
+  
+  lowTem1&lt;-gregexpr("\\t&lt;li&gt;[-+]?[0-9]",lowTem0)
+  
+  lowTem2&lt;-as.numeric(length(lowTem0))
+  lowTem3&lt;-as.numeric(length(lowTem0))
+  for(i in 1:length(lowTem0))
+  {
+    tempp2&lt;-lowTem1[[i]]
+    lowTem2[i]&lt;-substring(lowTem0[i],tempp2+5,tempp2+attr(tempp2,'match.length'))
+    lowTem3[i]&lt;-strsplit(lowTem2[i],"&lt;")[[1]][1]
+    
+  }
+  
+  
+  #天气
+  
+  tqi0&lt;-k[grep("&lt;li&gt;&lt;a href=\"http://qingdao.tianqi.com/20",k)+3]
+  
+  tqi1&lt;-substring(tqi0,11)
+  
+  tqi2&lt;-unlist(strsplit(tqi1,"&lt;/li&gt;"))
+  
+  #风向
+  fxiang0&lt;-k[grep("&lt;li&gt;&lt;a href=\"http://qingdao.tianqi.com/20",k)+4]
+  
+  fxiang1&lt;-substring(fxiang0,11)
+  
+  fxiang2&lt;-unlist(strsplit(fxiang1,"&lt;/li&gt;"))
+```
+---
+class:inverse,middle
+
+background-image:url(pic/star.jpg)
+
+  
+```R
+  
+  #风力
+  fli0&lt;-k[grep("&lt;li&gt;&lt;a href=\"http://qingdao.tianqi.com/20",k)+5]
+  
+  fli1&lt;-substring(fli0,11)
+  
+  fli2&lt;-unlist(strsplit(fli1,"&lt;/li&gt;"))
+  
+  
+  for (i in 1:length(time0))
+  {
+    write(c(time2[i],",",hightTem3[i],",",lowTem3[i],",",tqi2[i],",",fxiang2[i],",",fli2[i]),
+              file="C:/Users/xujing.LAPTOP-LLR84L1D/Desktop/QDhitorytq.csv",ncolumns=11,append=T)
+  }
+  
+  Sys.sleep(sample(2:8,1,replace=T))
+}
+  
+```
+
+---
+class:inverse,middle
+
+background-image:url(pic/star.jpg)
+
+```R
+
+#step3 查看爬取得天气数据
+
+#建议下载NotPad++或EmEditor,把数据另存为UTF-8编码，Liunix下读取很方便
+
+qdtq&lt;-readr::read_csv("C:/QDhitorytq.csv",col_names = F)
+head(qdtq)
+names(qdtq)&lt;-c("日期","最高温","最低温","天气","风向","风速")
+
+####嘿嘿，这样就爬好可以分析了。。。。。
+```
+
+
+---
+class:inverse,middle
+
+background-image:url(pic/star.jpg)
+
+
+空气质量的爬取过程与天气爬取很相似
+
+```R
+
+## 2 爬取青岛2013年10月28至2017年6月每天的空气质量指标：
+##                                   日期，质量等级，AQI指数，当天AQI排名，PM2.5，PM10，No2，So2，Co，O3
+
+
+```
+
+---
+
+class:inverse,middle
+
+background-image:url(pic/star.jpg)
+
+
+## 在Knit中调用Python
+
+
+```python
+
+import sys
+reload(sys)
+sys.setdefaultencoding("utf-8")
+
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+import seaborn as sns
+
+sns.set()
+
+path="C:/QDhitorytq.csv"
+data=pd.read_csv(path,sep=" ")
+
+data1=pd.DataFrame(data)
+
+print data1.head()
+
+```
+
+```
+##          date  high  low     天气    风向   风速
+## 0  2017-06-01    25   18     晴     南风   4级
+## 1  2017-06-02    23   16    多云    东南风   4级
+## 2  2017-06-03    22   17    多云     南风   2级
+## 3  2017-06-04    23   17     晴     南风   3级
+## 4  2017-06-05    22   17    多云    东南风   5级
+```
+
+---
+
+class:inverse,middle
+
+background-image:url(pic/star.jpg)
+
+### 那就用Python画个图吧
+
++ 竟然cell和cell之间不能通信,应该有参数控制的等我回去查一下
+
++ 画图演示是个失误，发现在画图只能跳pylab
+
+
+---
+class:inverse,middle
+
+background-image:url(pic/star.jpg)
+
+![假装运行出来了，贴个图](pic/fig.png)
+
+---
+class:inverse,middle
+
+background-image:url(pic/star.jpg)
+
+### 实际上Knitr支持好多种语言
+
+```r
+library(knitr)
+names(knit_engines$get())
+```
+
+```
+##  [1] "awk"       "bash"      "coffee"    "gawk"      "groovy"   
+##  [6] "haskell"   "lein"      "mysql"     "node"      "octave"   
+## [11] "perl"      "psql"      "python"    "Rscript"   "ruby"     
+## [16] "sas"       "scala"     "sed"       "sh"        "stata"    
+## [21] "zsh"       "highlight" "Rcpp"      "tikz"      "dot"      
+## [26] "c"         "fortran"   "fortran95" "asy"       "cat"      
+## [31] "asis"      "stan"      "block"     "block2"    "js"       
+## [36] "css"       "sql"       "go"
+```
+
+```r
+#knit_egines$set()
+```
+
+
+
+---
+class: inverse, middle, center
+background-image: url(pic/star.jpg)
+
+# 蟹蟹
+
+资源已上传至[GitHub](https://github.com/DataXujing?tab=repositories)，
+原创资料 转载请标注
+    </textarea>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {window.dispatchEvent(new Event('resize'));});
+(function(time) {
+  var d2 = function(number) {
+    return ('0' + number).slice(-2); // left-pad 0 to minutes/seconds
+  },
+
+  time_format = function(total) {
+    var secs = Math.abs(total) / 1000;
+    var h = Math.floor(secs / 3600);
+    var m = Math.floor(secs % 3600 / 60);
+    var s = Math.round(secs % 60);
+    var res = d2(m) + ':' + d2(s);
+    if (h > 0) res = h + ':' + res;
+    return res;  // [hh:]mm:ss
+  },
+
+  slide_number_div = function(i) {
+    return document.getElementsByClassName('remark-slide-number').item(i);
+  },
+
+  current_page_number = function(i) {
+    return slide_number_div(i).firstChild.textContent;  // text "i / N"
+  };
+
+  var timer = document.createElement('span'); timer.id = 'slide-time-left';
+  var time_left = time, k = slideshow.getCurrentSlideIndex(),
+      last_page_number = current_page_number(k);
+
+  setInterval(function() {
+    time_left = time_left - 1000;
+    timer.innerHTML = ' ' + time_format(time_left);
+    if (time_left < 0) timer.style.color = 'red';
+  }, 1000);
+
+  slide_number_div(k).appendChild(timer);
+
+  slideshow.on('showSlide', function(slide) {
+    var i = slide.getSlideIndex(), n = current_page_number(i);
+    // reset timer when a new slide is shown and the page number is changed
+    if (last_page_number !== n) {
+      time_left = time; last_page_number = n;
+      timer.innerHTML = ' ' + time_format(time); timer.style.color = null;
+    }
+    slide_number_div(i).appendChild(timer);
+  });
+})(60000);</script>
+
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  tex2jax: {
+    skipTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+  }
+});
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://cdn.bootcss.com/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
